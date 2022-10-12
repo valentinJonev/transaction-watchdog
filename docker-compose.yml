@@ -1,0 +1,69 @@
+version: "2.1"
+services:
+  dynamic-configuration-api:
+    image: dynamic-configuration-api
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: development
+      PORT: 3000
+      DB_HOST: postgres
+      DB_USERNAME: postgres
+      DB_PASSWORD: testpass
+      MQ_HOST: amqp://rabbitmq
+    depends_on:
+      - postgres
+      - rabbitmq
+    restart: on-failure
+
+  transaction-judge:
+    image: transaction-judge
+    ports:
+      - "3001:3000"
+    environment:
+      NODE_ENV: development
+      DB_HOST: postgres
+      DB_USERNAME: postgres
+      DB_PASSWORD: testpass
+      MQ_HOST: amqp://rabbitmq
+      NETWORK: goerli
+      INFURA_PROJECT_ID: 7a536873f9274f71af682efba3a621dc
+    depends_on:
+      - postgres
+      - rabbitmq
+    restart: on-failure
+
+  transaction-watchdog:
+    image: transaction-watchdog
+    ports:
+      - "3002:3000"
+    environment:
+      NODE_ENV: development
+      MQ_HOST: amqp://rabbitmq
+      NETWORK: goerli
+      INFURA_PROJECT_ID: 7a536873f9274f71af682efba3a621dc
+    depends_on:
+      - rabbitmq
+    restart: on-failure
+
+  postgres:
+    image: postgres
+    volumes:
+      - ./postgres-db/:/docker-entrypoint-initdb.d
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: testpass
+      POSTGRES_DB: watchdog
+    ports:
+      - '5432:5432'
+  
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+        - 5672:5672
+        - 15672:15672
+    healthcheck:
+        test: ["CMD", "curl", "-f", "http://localhost:15672"]
+        interval: 30s
+        timeout: 10s
+        retries: 5
