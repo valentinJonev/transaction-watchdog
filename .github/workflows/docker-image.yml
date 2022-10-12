@@ -1,0 +1,22 @@
+name: Docker Image CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Build the API Docker image
+      run: docker build . --file dynamic-configuration-api/Dockerfile --tag dynamic-configuration-api:$(date +%s)
+    - name: Build the Watchdog microservice Docker image
+      run: docker build . --file transaction-watchdog/Dockerfile --tag transaction-watchdog:$(date +%s)
+    - name: Build the judge microservice Docker image
+      run: docker build . --file transaction-judge/Dockerfile --tag transaction-judge:$(date +%s)
